@@ -1,12 +1,13 @@
 # session-control
 
-A band above the Claude Code prompt to switch model, effort and git work mode, and to see how full the context window is.
+A band above the Claude Code prompt to switch model, effort and git work mode, and to see how full the context window and your usage limits are.
 
 ```
 Model   [ 1 Sonnet ] [ 2 Opus ] [ 3 Fable ]
 Effort  [ 4 low ] [ 5 medium ] [ 6 high ] [ 7 xhigh ] [ 8 max ]
 Git     [ m Main branch ] [ b New branch ] [ w Worktree ]
 Context ███████░░░░░░░ 42% (84k/200k)   last request: Opus · high
+Limits  5h 23% · week 41%
 ```
 
 ## Install
@@ -27,4 +28,6 @@ Context ███████░░░░░░░ 42% (84k/200k)   last request
   - *New branch*: create a new branch from main and work there.
   - *Worktree*: create a separate git worktree on its own branch.
 - The context gauge turns yellow at 60 % and red at 85 %, and also shows in the status line.
+- **Limits** shows how much of your plan's usage windows (5 hours, week) is used, once Claude Code reports them (subscriptions only).
+- In the *New branch* and *Worktree* modes, a commit directly on main/master asks you first.
 - Choices are saved and carry over to new sessions.

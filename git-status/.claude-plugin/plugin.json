@@ -1,0 +1,6 @@
+{
+  "name": "git-status",
+  "version": "0.1.0",
+  "description": "Branch, uncommitted files and ahead/behind of the remote, always in the status line",
+  "author": { "name": "torben-kolbe" }
+}

@@ -1,12 +1,34 @@
 {
   "name": "claude-mods",
-  "owner": { "name": "torben-kolbe" },
+  "owner": {
+    "name": "torben-kolbe"
+  },
   "description": "Mods for Claude Code",
   "plugins": [
     {
       "name": "session-control",
       "source": "./session-control",
-      "description": "Switch model, effort and git work mode from a band above the prompt, with a context window gauge"
+      "description": "Switch model, effort and git work mode from a band above the prompt, with context and usage-limit gauges"
+    },
+    {
+      "name": "turn-notify",
+      "source": "./turn-notify",
+      "description": "A desktop notification with sound when a longer Claude turn is done"
+    },
+    {
+      "name": "git-guard",
+      "source": "./git-guard",
+      "description": "Asks before risky commands: force push, reset --hard, rm -rf, discarding changes, committing .env files"
+    },
+    {
+      "name": "git-status",
+      "source": "./git-status",
+      "description": "Branch, uncommitted files and ahead/behind of the remote, always in the status line"
+    },
+    {
+      "name": "learn-mode",
+      "source": "./learn-mode",
+      "description": "Claude explains each change briefly: what, why and the concept behind it"
     }
   ]
 }

@@ -1,13 +1,14 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { ContextFill, Effort, WorkMode } from '../types'
+import type { ContextFill, Effort, Limit, WorkMode } from '../types'
 
 const model = atom({ plugin: 'session-control', key: 'model' } as const, null)
 const effort = atom({ plugin: 'session-control', key: 'effort' } as const, null)
 const mode = atom({ plugin: 'session-control', key: 'mode' } as const, 'main')
 const context = atom({ plugin: 'session-control', key: 'context' } as const, null)
 const lastUsed = atom({ plugin: 'session-control', key: 'lastUsed' } as const, null)
+const limits = atom({ plugin: 'session-control', key: 'limits' } as const, [])
 
 // Sorted by strength, weakest first.
 const MODELS = [
@@ -44,6 +45,48 @@ const isEffort = (text: string): text is Effort => EFFORTS.some(e => e.level ===
 const isMode = (text: string): text is WorkMode => MODES.some(m => m.mode === text)
 
 const shortModel = (id: string) => MODELS.find(m => id.includes(m.id))?.label ?? id
+
+// A rate-limit window's kind as a short label: "5h", "week", or the kind itself.
+function limitLabel(kind: string) {
+  const k = kind.toLowerCase()
+  if (/five|5h|5_hour|hour/.test(k)) {
+    return '5h'
+  }
+  if (/seven|7d|week/.test(k)) {
+    return /opus|sonnet|fable/.test(k) ? `week ${k.match(/opus|sonnet|fable/)?.[0]}` : 'week'
+  }
+
+  return kind
+}
+
+const fillColor = (percent: number) => (percent >= 85 ? 'red' : percent >= 60 ? 'yellow' : 'green')
+
+const COMMIT = /\bgit\s+commit\b/
+
+// In the new-branch and worktree modes, a commit on main/master needs the person's yes.
+async function commitAllowed($: EngineInterface, command: string) {
+  const chosen = await read($, mode)
+  if (chosen === 'main' || !COMMIT.test(command)) {
+    return true
+  }
+  const result = await $.process.run(['git', 'branch', '--show-current'], { cwd: await $.session.cwd() })
+  const branch = result.stdout.trim()
+  if (result.exitCode !== 0 || (branch !== 'main' && branch !== 'master')) {
+    return true
+  }
+  const label = MODES.find(m => m.mode === chosen)?.label
+  const answer = await $.ui
+    .ask(`Git mode is "${label}", but Claude wants to commit directly on ${branch}. Allow it?`, {
+      header: 'Git mode',
+      options: ['Allow', 'Deny'],
+    })
+    .catch(() => 'Deny')
+
+  return answer === 'Allow'
+}
+
+const COMMIT_DENIED =
+  'session-control: the user did not allow committing on the main branch. Create a branch (or worktree) as the git work mode says, then commit there.'
 
 async function save($: EngineInterface) {
   await $.store.set('settings', {
@@ -239,9 +282,19 @@ export const register: Register = on => {
     return next({ ...e, context: [...(e.context ?? []), text] })
   })
 
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) =>
+    (await commitAllowed($, e.command)) ? next(e) : { deny: COMMIT_DENIED },
+  ).catch(($, e, next) => (next.called ? next(e) : { deny: 'session-control could not check this commit.' }))
+
+  on('tool.call', { tool: 'PowerShell' }, async ($, e, next) =>
+    (await commitAllowed($, e.command)) ? next(e) : { deny: COMMIT_DENIED },
+  ).catch(($, e, next) => (next.called ? next(e) : { deny: 'session-control could not check this commit.' }))
+
   on('session.measure', async ($, e, next) => {
     const fill = toFill(e.context)
     await update($, context, () => fill)
+    const windows: Limit[] = e.rateLimits.map(r => ({ label: limitLabel(r.kind), percent: Math.round(r.percentUsed) }))
+    await update($, limits, () => windows)
     $.ui.status(fill.percent === undefined ? undefined : `Context ${fill.percent}%`)
 
     return next(e)
@@ -257,6 +310,7 @@ export const register: Register = on => {
     const chosenMode = await read($, mode)
     const fill = await read($, context)
     const used = await read($, lastUsed)
+    const windows = await read($, limits)
     const repo = await $.session.repo()
     const activeModel = chosenModel ?? (await $.session.model())
     const barWidth = Math.max(10, Math.min(30, e.props.bodyColumns - 50))
@@ -315,6 +369,18 @@ export const register: Register = on => {
             </Text>
           )}
         </Box>
+        {windows.length > 0 && (
+          <Box flexWrap="wrap">
+            <Text dimColor>Limits  </Text>
+            {windows.map((w, i) => (
+              <Text>
+                {i > 0 ? <Text dimColor> · </Text> : ''}
+                <Text dimColor>{w.label} </Text>
+                <Text color={fillColor(w.percent)}>{w.percent}%</Text>
+              </Text>
+            ))}
+          </Box>
+        )}
       </Box>
     )
   })
@@ -337,7 +403,7 @@ function contextBar(
     return <Text dimColor>– no response yet</Text>
   }
   const filled = Math.min(width, Math.round((fill.percent / 100) * width))
-  const color = fill.percent >= 85 ? 'red' : fill.percent >= 60 ? 'yellow' : 'green'
+  const color = fillColor(fill.percent)
 
   return (
     <Text>

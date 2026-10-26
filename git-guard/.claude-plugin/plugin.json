@@ -1,0 +1,6 @@
+{
+  "name": "git-guard",
+  "version": "0.1.0",
+  "description": "Asks before risky commands: force push, reset --hard, rm -rf, discarding changes, committing .env files",
+  "author": { "name": "torben-kolbe" }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "learn-mode",
+  "version": "0.1.0",
+  "description": "Claude explains each change briefly: what, why and the concept behind it",
+  "author": { "name": "torben-kolbe" }
+}

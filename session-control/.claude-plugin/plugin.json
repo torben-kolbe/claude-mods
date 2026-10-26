@@ -1,7 +1,7 @@
 {
   "name": "session-control",
-  "version": "0.2.0",
-  "description": "Switch model, effort and git work mode from a band above the prompt, with a context window gauge",
+  "version": "0.3.0",
+  "description": "Switch model, effort and git work mode from a band above the prompt, with context and usage-limit gauges",
   "author": { "name": "torben-kolbe" },
   "types": "./types/index.d.ts"
 }

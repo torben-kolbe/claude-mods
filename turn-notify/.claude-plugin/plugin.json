@@ -1,0 +1,6 @@
+{
+  "name": "turn-notify",
+  "version": "0.1.0",
+  "description": "A desktop notification with sound when a longer Claude turn is done",
+  "author": { "name": "torben-kolbe" }
+}
