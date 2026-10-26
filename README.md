@@ -30,4 +30,22 @@ In the desktop app: click + next to the prompt box, then Plugins, Add marketplac
 
 ## Turning mods on and off
 
-Run `/plugin` in Claude Code: every installed mod is listed there and can be enabled or disabled on its own.
+Run `/plugin` in Claude Code: every installed mod is listed there and can be enabled or disabled on its own. From a shell: `claude plugin disable <mod>@claude-mods` and `claude plugin enable <mod>@claude-mods`.
+
+## Updating
+
+From a shell, fetch the latest catalog, then update each mod you use:
+
+```
+claude plugin marketplace update claude-mods
+claude plugin update <mod>@claude-mods
+```
+
+Then restart Claude Code (or run `/reload-plugins`) to load the new version.
+
+## Developing
+
+- Each mod lives in its own folder with `.claude-plugin/plugin.json`, `hooks/` and `tests/`, and is listed in `.claude-plugin/marketplace.json`.
+- **Bump `version` in the mod's `plugin.json` with every change you push**: `claude plugin update` only picks up a new version.
+- `claude plugin validate <mod>` checks a mod, `claude plugin test <mod>` runs its tests.
+- With this folder added as a local marketplace (`claude plugin marketplace add <path to this folder>`), installed mods are read straight from it: `/reload-plugins` loads a change, no update needed.
