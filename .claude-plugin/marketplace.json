@@ -1,0 +1,12 @@
+{
+  "name": "claude-mods",
+  "owner": { "name": "torben-kolbe" },
+  "description": "Mods for Claude Code",
+  "plugins": [
+    {
+      "name": "session-control",
+      "source": "./session-control",
+      "description": "Switch model, effort and git work mode from a band above the prompt, with a context window gauge"
+    }
+  ]
+}
