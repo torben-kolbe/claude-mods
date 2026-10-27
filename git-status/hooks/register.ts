@@ -19,9 +19,15 @@ export function describe(porcelain: string) {
       changed += 1
     }
   }
-  const parts = [`git: ${branch === '(detached)' ? 'detached HEAD' : branch}`]
+  // The surface already heads the line with the mod's name, so no "git:" prefix; arrows only when
+  // there is something to push or pull, to keep the line short in the desktop's footer.
+  const parts = [branch === '(detached)' ? 'detached HEAD' : branch]
   parts.push(changed === 0 ? 'clean' : `${changed} changed`)
-  parts.push(hasUpstream ? `↑${ahead} ↓${behind}` : 'not pushed')
+  if (!hasUpstream) {
+    parts.push('not pushed')
+  } else if (ahead > 0 || behind > 0) {
+    parts.push(`↑${ahead} ↓${behind}`)
+  }
 
   return parts.join(' · ')
 }
