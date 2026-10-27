@@ -295,7 +295,6 @@ export const register: Register = on => {
     await update($, context, () => fill)
     const windows: Limit[] = e.rateLimits.map(r => ({ label: limitLabel(r.kind), percent: Math.round(r.percentUsed) }))
     await update($, limits, () => windows)
-    $.ui.status(fill.percent === undefined ? undefined : `Context ${fill.percent}%`)
 
     return next(e)
   })
@@ -314,15 +313,25 @@ export const register: Register = on => {
     const repo = await $.session.repo()
     const activeModel = chosenModel ?? (await $.session.model())
     const barWidth = Math.max(10, Math.min(30, e.props.bodyColumns - 50))
+    // The terminal draws a Button as `[ label ]`, so the key goes into the label. A graphical
+    // surface (desktop, VS Code) draws a native button with its own hotkey chip, taller than a
+    // line of text: there the key would show twice and the rows need room between them.
+    const isTerminal = e.surface === 'terminal'
+    const labelOf = (key: string, text: string) => (isTerminal ? `${key} ${text}` : text)
+    const heading = (text: string) => (
+      <Box width={8} flexShrink={0}>
+        <Text dimColor>{text}</Text>
+      </Box>
+    )
 
     return (
-      <Box flexDirection="column">
-        <Box flexWrap="wrap">
-          <Text dimColor>Model   </Text>
+      <Box flexDirection="column" rowGap={isTerminal ? 0 : 'sm'}>
+        <Box flexWrap="wrap" alignItems="center">
+          {heading('Model')}
           {MODELS.map(m => (
             <Button
               key={`model-${m.label}`}
-              label={`${m.key} ${m.label}`}
+              label={labelOf(m.key, m.label)}
               hotkey={m.key}
               variant={activeModel.includes(m.id) || activeModel.toLowerCase() === m.label.toLowerCase() ? 'primary' : undefined}
               onPress={() => setModel($, m.id)}
@@ -330,12 +339,12 @@ export const register: Register = on => {
           ))}
           <Text dimColor>{chosenModel ? '' : '  (default)'}</Text>
         </Box>
-        <Box flexWrap="wrap">
-          <Text dimColor>Effort  </Text>
+        <Box flexWrap="wrap" alignItems="center">
+          {heading('Effort')}
           {EFFORTS.map(x => (
             <Button
               key={`effort-${x.level}`}
-              label={`${x.key} ${x.level}`}
+              label={labelOf(x.key, x.level)}
               hotkey={x.key}
               variant={chosenEffort === x.level ? 'primary' : undefined}
               onPress={() => setEffort($, x.level)}
@@ -343,15 +352,15 @@ export const register: Register = on => {
           ))}
           <Text dimColor>{chosenEffort ? '' : '  (default)'}</Text>
         </Box>
-        <Box flexWrap="wrap">
-          <Text dimColor>Git     </Text>
+        <Box flexWrap="wrap" alignItems="center">
+          {heading('Git')}
           {repo === null ? (
             <Text dimColor>no git repository – mode inactive</Text>
           ) : (
             MODES.map(x => (
               <Button
                 key={`mode-${x.mode}`}
-                label={`${x.key} ${x.label}`}
+                label={labelOf(x.key, x.label)}
                 hotkey={x.key}
                 variant={chosenMode === x.mode ? 'primary' : undefined}
                 onPress={() => setMode($, x.mode)}
@@ -359,9 +368,9 @@ export const register: Register = on => {
             ))
           )}
         </Box>
-        <Box flexWrap="wrap">
-          <Text dimColor>Context </Text>
-          {contextBar(Text, fill, barWidth)}
+        <Box flexWrap="wrap" alignItems="center">
+          {heading('Context')}
+          {contextBar(Text, fill, barWidth, isTerminal)}
           {used && (
             <Text dimColor>
               {'   '}last request: {shortModel(used.model)}
@@ -370,8 +379,8 @@ export const register: Register = on => {
           )}
         </Box>
         {windows.length > 0 && (
-          <Box flexWrap="wrap">
-            <Text dimColor>Limits  </Text>
+          <Box flexWrap="wrap" alignItems="center">
+            {heading('Limits')}
             {windows.map((w, i) => (
               <Text>
                 {i > 0 ? <Text dimColor> · </Text> : ''}
@@ -398,17 +407,20 @@ function contextBar(
   Text: ReturnType<EngineInterface['ui']['resolve']>['Text'],
   fill: ContextFill | null,
   width: number,
+  isTerminal: boolean,
 ) {
   if (!fill || fill.percent === undefined) {
     return <Text dimColor>– no response yet</Text>
   }
   const filled = Math.min(width, Math.round((fill.percent / 100) * width))
   const color = fillColor(fill.percent)
+  // A desktop font draws `░` as a noisy dot pattern; a dimmed full block reads as a plain track.
+  const track = isTerminal ? '░' : '█'
 
   return (
     <Text>
       <Text color={color}>{'█'.repeat(filled)}</Text>
-      <Text dimColor>{'░'.repeat(width - filled)}</Text>
+      <Text dimColor>{track.repeat(width - filled)}</Text>
       <Text color={color}> {fill.percent}%</Text>
       <Text dimColor> ({kilo(fill.tokens ?? 0)}/{kilo(fill.window)})</Text>
     </Text>
