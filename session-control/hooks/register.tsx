@@ -180,6 +180,8 @@ export const register: Register = on => {
 
     const { context: fill } = await $.session.usage()
     await update($, context, () => toFill(fill))
+    // Clears the "Context N%" line versions before 0.4.0 pinned; a reload keeps it otherwise.
+    $.ui.status(undefined)
 
     return next(e)
   })
