@@ -1,6 +1,6 @@
 {
   "name": "session-control",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Switch model, effort and git work mode from a band above the prompt, with context and usage-limit gauges",
   "author": { "name": "torben-kolbe" },
   "types": "./types/index.d.ts"
